@@ -4,5 +4,6 @@ __pycache__/
 .ruff_cache/
 .env
 data/index/
+data/knowledge/crawler/
 data/sources/crawler_state.json
 *.pyc

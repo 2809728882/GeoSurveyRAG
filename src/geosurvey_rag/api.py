@@ -19,6 +19,7 @@ from geosurvey_rag.knowledge_sources import (
 from geosurvey_rag.rag import RagPipeline
 from geosurvey_rag.schemas import (
     AreaRequest,
+    CrawlAndChatRequest,
     CrawlKnowledgeRequest,
     CrawlerSourceRequest,
     CrawlerSourceToggleRequest,
@@ -97,6 +98,22 @@ def crawl_knowledge(request: CrawlKnowledgeRequest) -> dict:
         index_result = reindex_if_needed(settings.knowledge_dir, settings.index_dir, force=True)
         rag = RagPipeline(settings.index_dir)
     return {"ok": True, "crawl": crawl_result, "index": index_result}
+
+
+@app.post("/admin/knowledge/crawl-and-chat")
+def crawl_and_chat(request: CrawlAndChatRequest) -> dict:
+    global rag
+    crawl_result = crawl_sources(request.urls)
+    index_result = reindex_if_needed(settings.knowledge_dir, settings.index_dir, force=True)
+    rag = RagPipeline(settings.index_dir)
+    answer, sources = rag.answer(request.question, top_k=request.top_k)
+    return {
+        "ok": True,
+        "crawl": crawl_result,
+        "index": index_result,
+        "answer": answer,
+        "sources": sources,
+    }
 
 
 @app.get("/admin/knowledge/crawler-sources")

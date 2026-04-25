@@ -8,55 +8,60 @@
   </head>
   <body>
     <main class="shell">
-      <section class="map-panel">
-        <div class="map-toolbar">
+      <section class="workspace">
+        <header class="topbar">
           <div>
             <h1>GeoSurveyRAG</h1>
-            <p>测绘知识库问答 · 空间工具调用 · WebGIS 演示</p>
+            <p>搜索资料 -> 爬虫入库 -> 自动更新索引 -> RAG 问答</p>
           </div>
-          <div class="tool-row">
-            <button id="distanceBtn" title="计算已绘制点的折线距离">距离</button>
-            <button id="areaBtn" title="计算已绘制点围成的面积">面积</button>
-            <button id="clearBtn" title="清空画布">清空</button>
+          <button id="statusBtn" title="查看索引状态">索引状态</button>
+        </header>
+
+        <section class="panel">
+          <h2>1. 输入问题</h2>
+          <textarea id="question" rows="5">无人机航测成果入库前需要检查哪些质量项？请按检查清单回答。</textarea>
+          <div class="button-row">
+            <button class="primary" id="askBtn">直接问当前知识库</button>
           </div>
-        </div>
-        <svg id="map" viewBox="0 0 1000 620" role="img" aria-label="WebGIS drawing canvas">
-          <defs>
-            <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
-              <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#d7e0ea" stroke-width="1" />
-            </pattern>
-          </defs>
-          <rect width="1000" height="620" fill="#f8fbff" />
-          <rect width="1000" height="620" fill="url(#grid)" />
-          <path d="M70 500 C210 410 240 250 390 250 C540 250 560 130 720 135 C820 138 860 210 930 185" fill="none" stroke="#8bb8cc" stroke-width="18" stroke-linecap="round" opacity="0.42" />
-          <path d="M110 110 L335 90 L430 205 L350 350 L150 320 Z" fill="#dbeed8" stroke="#7cac7e" stroke-width="2" opacity="0.72" />
-          <path d="M575 310 L835 285 L905 430 L715 530 L555 450 Z" fill="#f4e3bc" stroke="#c49b45" stroke-width="2" opacity="0.7" />
-          <g id="drawLayer"></g>
-        </svg>
-        <div class="status-line" id="mapStatus">点击地图添加点，系统会按宜昌附近经纬度范围模拟坐标。</div>
+        </section>
+
+        <section class="panel">
+          <h2>2. 粘贴你搜索到的资料 URL</h2>
+          <textarea id="crawlUrls" rows="5" placeholder="每行一个 URL，例如：https://epsg.io/3857"></textarea>
+          <div class="button-row">
+            <button id="crawlBtn">只爬取并更新知识库</button>
+            <button class="primary" id="crawlAskBtn">爬取更新后再回答</button>
+          </div>
+          <p class="hint">适合你先在浏览器里搜索资料，再把可靠页面 URL 粘贴进来，由系统爬取、入库、重建索引并回答。</p>
+        </section>
+
+        <section class="panel">
+          <h2>3. 手动补充知识</h2>
+          <input id="manualTitle" placeholder="标题，例如：RTK 固定解检查规则" />
+          <textarea id="manualContent" rows="4" placeholder="粘贴项目经验、质检规则、作业指导书摘要等内容"></textarea>
+          <div class="button-row">
+            <button id="manualBtn">手动入库并更新索引</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>爬虫来源管理</h2>
+          <input id="sourceName" placeholder="来源名称，例如：EPSG 4490 CGCS2000" />
+          <input id="sourceUrl" placeholder="来源 URL，例如：https://epsg.io/4490" />
+          <div class="button-row">
+            <button id="addSourceBtn">添加来源</button>
+            <button id="listSourcesBtn">查看默认来源</button>
+          </div>
+        </section>
       </section>
 
-      <aside class="assistant-panel">
+      <aside class="result-panel">
         <div class="panel-head">
-          <h2>测绘智能问答</h2>
-          <button id="statusBtn" title="查看知识库索引状态">索引</button>
+          <h2>回答与更新结果</h2>
+          <span id="runtimeState">DeepSeek / OpenAI-compatible</span>
         </div>
-        <textarea id="question" rows="6">无人机航测成果入库前需要检查哪些质量项？</textarea>
-        <button class="primary" id="askBtn">提问</button>
-        <div class="answer" id="answer"></div>
+        <div class="answer" id="answer">等待提问或知识库更新。</div>
         <div class="sources" id="sources"></div>
-        <div class="knowledge-admin">
-          <h2>Knowledge Intake</h2>
-          <input id="manualTitle" placeholder="Manual title" />
-          <textarea id="manualContent" rows="4" placeholder="Paste surveying notes, project QA, standards excerpt..."></textarea>
-          <button id="manualBtn">Manual Ingest</button>
-          <input id="crawlUrl" placeholder="https://example.com/geospatial-standard" />
-          <button id="crawlBtn">Crawler Ingest</button>
-          <input id="sourceName" placeholder="Crawler source name" />
-          <input id="sourceUrl" placeholder="https://example.com/source-page" />
-          <button id="addSourceBtn">Add Source</button>
-          <button id="listSourcesBtn">List Sources</button>
-        </div>
       </aside>
     </main>
     <script src="/static/app.js"></script>
