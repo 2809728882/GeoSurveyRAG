@@ -70,6 +70,18 @@
           <h2>回答与更新结果</h2>
           <span id="runtimeState">DeepSeek / OpenAI-compatible</span>
         </div>
+        <div class="crawl-status" id="crawlStatus">
+          <div class="status-head">
+            <strong>爬取状态</strong>
+            <span id="crawlStage">待开始</span>
+          </div>
+          <div class="status-grid">
+            <span>总数：<b id="crawlTotal">0</b></span>
+            <span>成功：<b id="crawlSuccess">0</b></span>
+            <span>失败：<b id="crawlFailed">0</b></span>
+          </div>
+          <div class="status-list" id="crawlStatusList">暂无爬取任务。</div>
+        </div>
         <div class="answer" id="answer">等待提问或知识库更新。</div>
         <div class="sources" id="sources"></div>
       </aside>

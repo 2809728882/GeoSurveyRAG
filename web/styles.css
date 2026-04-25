@@ -145,6 +145,82 @@ textarea {
   font-size: 14px;
 }
 
+.crawl-status {
+  border: 1px solid #d7dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.status-head,
+.status-grid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.status-head span {
+  color: #12677b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.status-grid {
+  justify-content: flex-start;
+  margin-top: 8px;
+  color: #667085;
+  font-size: 13px;
+}
+
+.status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 10px;
+  max-height: 180px;
+  overflow: auto;
+  color: #667085;
+  font-size: 13px;
+}
+
+.status-item {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  border: 1px solid #e1e7ef;
+  border-radius: 6px;
+  padding: 8px;
+  background: #f8fafc;
+}
+
+.status-item span {
+  font-weight: 700;
+}
+
+.status-item code,
+.status-item small {
+  overflow-wrap: anywhere;
+}
+
+.status-item small {
+  grid-column: 2;
+  color: #667085;
+}
+
+.status-item.success span {
+  color: #157347;
+}
+
+.status-item.failed span {
+  color: #b42318;
+}
+
+.status-item.pending span {
+  color: #7a5d00;
+}
+
 .answer {
   flex: 1;
   min-height: 320px;
