@@ -103,8 +103,8 @@ OPENAI_BASE_URL=https://api.openai.com/v1
 OPENAI_MODEL=gpt-4.1-mini
 
 # DeepSeek
-OPENAI_BASE_URL=https://api.deepseek.com/v1
-OPENAI_MODEL=deepseek-chat
+OPENAI_BASE_URL=https://api.deepseek.com
+OPENAI_MODEL=deepseek-v4-flash
 
 # 阿里云百炼 / DashScope OpenAI 兼容模式
 OPENAI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
