@@ -30,6 +30,15 @@ function renderOperation(data) {
   sources.textContent = "";
 }
 
+async function postForm(url, formData) {
+  const response = await fetch(url, {
+    method: "POST",
+    body: formData,
+  });
+  if (!response.ok) throw new Error(await response.text());
+  return response.json();
+}
+
 document.querySelector("#askBtn").addEventListener("click", async () => {
   answer.textContent = "正在检索当前知识库并调用模型...";
   sources.textContent = "";
@@ -77,6 +86,23 @@ document.querySelector("#crawlAskBtn").addEventListener("click", async () => {
 document.querySelector("#statusBtn").addEventListener("click", async () => {
   const response = await fetch("/admin/index/status");
   const data = await response.json();
+  renderOperation(data);
+});
+
+document.querySelector("#uploadBtn").addEventListener("click", async () => {
+  const fileInput = document.querySelector("#uploadFiles");
+  if (!fileInput.files.length) {
+    answer.textContent = "请选择至少一个文件。";
+    return;
+  }
+  const formData = new FormData();
+  for (const file of fileInput.files) {
+    formData.append("files", file);
+  }
+  formData.append("category", document.querySelector("#uploadCategory").value.trim() || "uploads");
+  formData.append("rebuild", "true");
+  answer.textContent = "正在解析文件、写入知识库并重建索引...";
+  const data = await postForm("/admin/knowledge/upload", formData);
   renderOperation(data);
 });
 

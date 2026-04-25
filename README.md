@@ -17,6 +17,7 @@ GeoSurveyRAG 将测绘知识库、向量检索、空间工具调用、爬虫/手
 - **向量后端可切换**：默认使用轻量 JSON 索引，便于本地运行；可切换到 FAISS，后续也可扩展 Milvus/Qdrant。
 - **Agent 工具调用**：内置距离量测、闭合多边形面积计算、坐标转换、WKT 边界框解析等空间工具。
 - **双通道知识入库**：支持手动录入项目经验和质检规则，也支持管理爬虫来源并同步公开网页。
+- **多格式文件上传**：支持 PDF、Word DOCX、Excel XLSX、CSV、JSON、TXT、Markdown 上传后自动解析入库。
 - **知识更新前端**：围绕“搜索资料 URL -> 爬虫入库 -> 自动更新索引 -> RAG 问答”组织工作流。
 - **评测闭环**：内置 36 条测绘领域 golden questions，可生成 Markdown 评测报告。
 - **工程化部署**：提供 FastAPI 服务、Docker、Docker Compose、健康检查、环境变量配置和 CI workflow。
@@ -122,6 +123,28 @@ OPENAI_MODEL=glm-4-flash
 - 当前接口使用标准 `/chat/completions`，适合大多数 OpenAI-compatible 服务。
 
 ## 知识库入库
+
+### 文件上传入库
+
+适合上传测绘规范、项目报告、质检表、Excel 台账、作业指导书等资料。
+
+支持格式：
+
+```text
+.md .txt .csv .tsv .json .pdf .docx .xlsx
+```
+
+API 示例：
+
+```bash
+curl -X POST http://127.0.0.1:8000/admin/knowledge/upload \
+  -F "files=@survey_report.pdf" \
+  -F "files=@quality_check.xlsx" \
+  -F "category=project-docs" \
+  -F "rebuild=true"
+```
+
+上传后的原文件会保存到 `data/uploads/`，解析后的知识库 Markdown 会保存到 `data/knowledge/uploads/`。这两个目录默认不会提交到 GitHub。
 
 ### 手动入库
 

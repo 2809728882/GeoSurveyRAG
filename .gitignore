@@ -5,5 +5,7 @@ __pycache__/
 .env
 data/index/
 data/knowledge/crawler/
+data/knowledge/uploads/
+data/uploads/
 data/sources/crawler_state.json
 *.pyc

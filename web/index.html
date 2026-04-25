@@ -36,7 +36,17 @@
         </section>
 
         <section class="panel">
-          <h2>3. 手动补充知识</h2>
+          <h2>3. 上传文件入库</h2>
+          <input id="uploadFiles" type="file" multiple accept=".md,.txt,.csv,.tsv,.json,.pdf,.docx,.xlsx" />
+          <input id="uploadCategory" placeholder="分类，例如：project-docs" value="project-docs" />
+          <div class="button-row">
+            <button id="uploadBtn">上传文件并更新索引</button>
+          </div>
+          <p class="hint">支持 Markdown、TXT、CSV、TSV、JSON、PDF、Word DOCX、Excel XLSX。上传文件只保存在本地知识库目录。</p>
+        </section>
+
+        <section class="panel">
+          <h2>4. 手动补充知识</h2>
           <input id="manualTitle" placeholder="标题，例如：RTK 固定解检查规则" />
           <textarea id="manualContent" rows="4" placeholder="粘贴项目经验、质检规则、作业指导书摘要等内容"></textarea>
           <div class="button-row">
@@ -45,7 +55,7 @@
         </section>
 
         <section class="panel">
-          <h2>爬虫来源管理</h2>
+          <h2>5. 爬虫来源管理</h2>
           <input id="sourceName" placeholder="来源名称，例如：EPSG 4490 CGCS2000" />
           <input id="sourceUrl" placeholder="来源 URL，例如：https://epsg.io/4490" />
           <div class="button-row">

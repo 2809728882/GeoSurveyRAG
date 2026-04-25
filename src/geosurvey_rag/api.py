@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from pathlib import Path
+from zipfile import BadZipFile
 
-from fastapi import FastAPI
+from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from geosurvey_rag.agent import GeoAgent, format_tool_summary
+from geosurvey_rag.file_ingestion import save_uploaded_knowledge
 from geosurvey_rag.index_updater import reindex_if_needed
 from geosurvey_rag.ingestion import load_manifest
 from geosurvey_rag.knowledge_sources import crawl_sources, save_manual_knowledge
@@ -98,6 +100,33 @@ def crawl_knowledge(request: CrawlKnowledgeRequest) -> dict:
         index_result = reindex_if_needed(settings.knowledge_dir, settings.index_dir, force=True)
         rag = RagPipeline(settings.index_dir)
     return {"ok": True, "crawl": crawl_result, "index": index_result}
+
+
+@app.post("/admin/knowledge/upload")
+async def upload_knowledge(
+    files: list[UploadFile] = File(...),
+    category: str = Form("uploads"),
+    rebuild: bool = Form(True),
+) -> dict:
+    global rag
+    results = []
+    for file in files:
+        data = await file.read()
+        try:
+            results.append(save_uploaded_knowledge(file.filename or "upload", data, category))
+        except (ValueError, RuntimeError, BadZipFile) as exc:  # type: ignore[name-defined]
+            results.append({"filename": file.filename, "ok": False, "error": str(exc)})
+
+    index_result = None
+    if rebuild and any(item.get("ok") for item in results):
+        index_result = reindex_if_needed(settings.knowledge_dir, settings.index_dir, force=True)
+        rag = RagPipeline(settings.index_dir)
+
+    return {
+        "ok": any(item.get("ok") for item in results),
+        "uploaded": results,
+        "index": index_result,
+    }
 
 
 @app.post("/admin/knowledge/crawl-and-chat")

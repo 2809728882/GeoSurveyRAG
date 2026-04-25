@@ -2,6 +2,35 @@
 
 GeoSurveyRAG 支持两类知识来源：手动入库和爬虫自动更新。两类内容最终都会保存到 `data/knowledge`，再统一进入切片、向量化、检索和评测流程。
 
+## 文件上传入库
+
+适合上传测绘规范、项目报告、质检表、Excel 台账、作业指导书等资料。
+
+支持格式：
+
+```text
+.md .txt .csv .tsv .json .pdf .docx .xlsx
+```
+
+API：
+
+```bash
+curl -X POST http://127.0.0.1:8000/admin/knowledge/upload \
+  -F "files=@survey_report.pdf" \
+  -F "files=@quality_check.xlsx" \
+  -F "category=project-docs" \
+  -F "rebuild=true"
+```
+
+保存位置：
+
+```text
+data/uploads/<category>/              # 原始上传文件
+data/knowledge/uploads/<category>/    # 解析后的 Markdown 知识文件
+```
+
+这两个目录属于运行时数据，默认不会提交到 GitHub。
+
 ## 手动入库
 
 适合录入内部项目经验、测绘质检规则、作业指导书摘要和运维知识。
