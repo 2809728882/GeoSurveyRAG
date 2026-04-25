@@ -4,7 +4,7 @@ GeoSurveyRAG 当前支持两种索引模式：
 
 ## JSON 轻量索引
 
-默认模式，适合离线演示、面试讲解和无依赖运行。
+默认模式，适合离线运行、小规模知识库和无依赖部署。
 
 ```powershell
 $env:VECTOR_BACKEND="json"
