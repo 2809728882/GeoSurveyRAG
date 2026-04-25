@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from geosurvey_rag.llm import LocalLLM
+from geosurvey_rag.llm import create_llm
 from geosurvey_rag.schemas import SourceChunk
 from geosurvey_rag.settings import settings
 from geosurvey_rag.vector_store import create_vector_store
@@ -11,7 +11,7 @@ from geosurvey_rag.vector_store import create_vector_store
 class RagPipeline:
     def __init__(self, index_dir: Path | str = settings.index_dir) -> None:
         self.store = create_vector_store(index_dir, settings.vector_backend, settings.dense_dim).load()
-        self.llm = LocalLLM()
+        self.llm = create_llm()
 
     def answer(self, question: str, top_k: int | None = None, tool_summary: str = "") -> tuple[str, list[SourceChunk]]:
         retrieved = self.store.search(question, top_k or settings.top_k)

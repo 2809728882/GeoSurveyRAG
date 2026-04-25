@@ -68,6 +68,59 @@ curl -X POST http://127.0.0.1:8000/tool/distance \
   -d "{\"points\":[[111.30,30.70],[111.32,30.72]],\"unit\":\"m\"}"
 ```
 
+## 大模型 API 配置
+
+项目默认使用 `local` 本地回答器，便于无 API Key 的情况下演示完整 RAG 链路。如果需要接入真实大模型，可使用 OpenAI-compatible 接口。
+
+复制环境变量模板：
+
+```powershell
+copy .env.example .env
+```
+
+编辑 `.env`：
+
+```env
+LLM_PROVIDER=openai-compatible
+OPENAI_API_KEY=你的_API_Key
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4.1-mini
+OPENAI_TIMEOUT=60
+OPENAI_TEMPERATURE=0.2
+```
+
+重新启动服务：
+
+```powershell
+uvicorn geosurvey_rag.api:app --reload --host 0.0.0.0 --port 8000
+```
+
+常见兼容接口示例：
+
+```env
+# OpenAI
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4.1-mini
+
+# DeepSeek
+OPENAI_BASE_URL=https://api.deepseek.com/v1
+OPENAI_MODEL=deepseek-chat
+
+# 阿里云百炼 / DashScope OpenAI 兼容模式
+OPENAI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+OPENAI_MODEL=qwen-plus
+
+# 智谱 GLM OpenAI 兼容模式
+OPENAI_BASE_URL=https://open.bigmodel.cn/api/paas/v4
+OPENAI_MODEL=glm-4-flash
+```
+
+说明：
+
+- `OPENAI_API_KEY` 不要提交到 GitHub，仓库只保留 `.env.example`。
+- 如果 API Key 缺失、网络失败或模型返回异常，系统会自动回退到本地回答器。
+- 当前接口使用标准 `/chat/completions`，适合大多数 OpenAI-compatible 服务。
+
 ## 知识库入库
 
 ### 手动入库
