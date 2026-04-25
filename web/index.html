@@ -7,82 +7,112 @@
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <main class="shell">
-      <section class="workspace">
+    <main class="app-shell">
+      <section class="workflow">
         <header class="topbar">
           <div>
             <h1>GeoSurveyRAG</h1>
-            <p>搜索资料 -> 爬虫入库 -> 自动更新索引 -> RAG 问答</p>
+            <p>测绘知识更新与 RAG 问答工作台</p>
           </div>
-          <button id="statusBtn" title="查看索引状态">索引状态</button>
+          <button id="statusBtn">索引状态</button>
         </header>
 
-        <section class="panel">
-          <h2>1. 输入问题</h2>
+        <section class="step">
+          <div class="step-title">
+            <span>1</span>
+            <div>
+              <h2>选择知识来源</h2>
+              <p>选择一种方式更新知识库。推荐先用 URL 或文件入库，再提问验证。</p>
+            </div>
+          </div>
+
+          <div class="source-tabs" role="tablist" aria-label="知识来源">
+            <button class="tab active" data-source="url">URL 爬取</button>
+            <button class="tab" data-source="file">文件上传</button>
+            <button class="tab" data-source="manual">手动录入</button>
+          </div>
+
+          <div class="source-panel active" id="source-url">
+            <label for="crawlUrls">资料 URL</label>
+            <textarea id="crawlUrls" rows="5" placeholder="每行一个 URL，例如：https://epsg.io/3857"></textarea>
+            <p class="hint">适合先在浏览器搜索可靠资料，再把页面 URL 粘贴进来，由系统爬取并入库。</p>
+          </div>
+
+          <div class="source-panel" id="source-file">
+            <label for="uploadFiles">上传文件</label>
+            <input id="uploadFiles" type="file" multiple accept=".md,.txt,.csv,.tsv,.json,.pdf,.docx,.xlsx" />
+            <label for="uploadCategory">文件分类</label>
+            <input id="uploadCategory" value="project-docs" placeholder="例如：project-docs" />
+            <p class="hint">支持 Markdown、TXT、CSV、TSV、JSON、PDF、Word DOCX、Excel XLSX。</p>
+          </div>
+
+          <div class="source-panel" id="source-manual">
+            <label for="manualTitle">标题</label>
+            <input id="manualTitle" placeholder="例如：RTK 固定解检查规则" />
+            <label for="manualContent">内容</label>
+            <textarea id="manualContent" rows="5" placeholder="粘贴项目经验、质检规则、作业指导书摘要等内容"></textarea>
+          </div>
+        </section>
+
+        <section class="step">
+          <div class="step-title">
+            <span>2</span>
+            <div>
+              <h2>更新知识库</h2>
+              <p>系统会解析资料、写入知识库并重建索引。</p>
+            </div>
+          </div>
+          <div class="button-row">
+            <button class="primary" id="updateKnowledgeBtn">更新知识库</button>
+            <button id="crawlAskBtn">更新后直接回答</button>
+          </div>
+        </section>
+
+        <section class="step">
+          <div class="step-title">
+            <span>3</span>
+            <div>
+              <h2>提问验证</h2>
+              <p>基于当前知识库检索上下文，并调用大模型生成回答。</p>
+            </div>
+          </div>
           <textarea id="question" rows="5">无人机航测成果入库前需要检查哪些质量项？请按检查清单回答。</textarea>
           <div class="button-row">
-            <button class="primary" id="askBtn">直接问当前知识库</button>
+            <button class="primary" id="askBtn">基于当前知识库回答</button>
           </div>
         </section>
 
-        <section class="panel">
-          <h2>2. 粘贴你搜索到的资料 URL</h2>
-          <textarea id="crawlUrls" rows="5" placeholder="每行一个 URL，例如：https://epsg.io/3857"></textarea>
-          <div class="button-row">
-            <button id="crawlBtn">只爬取并更新知识库</button>
-            <button class="primary" id="crawlAskBtn">爬取更新后再回答</button>
-          </div>
-          <p class="hint">适合你先在浏览器里搜索资料，再把可靠页面 URL 粘贴进来，由系统爬取、入库、重建索引并回答。</p>
-        </section>
-
-        <section class="panel">
-          <h2>3. 上传文件入库</h2>
-          <input id="uploadFiles" type="file" multiple accept=".md,.txt,.csv,.tsv,.json,.pdf,.docx,.xlsx" />
-          <input id="uploadCategory" placeholder="分类，例如：project-docs" value="project-docs" />
-          <div class="button-row">
-            <button id="uploadBtn">上传文件并更新索引</button>
-          </div>
-          <p class="hint">支持 Markdown、TXT、CSV、TSV、JSON、PDF、Word DOCX、Excel XLSX。上传文件只保存在本地知识库目录。</p>
-        </section>
-
-        <section class="panel">
-          <h2>4. 手动补充知识</h2>
-          <input id="manualTitle" placeholder="标题，例如：RTK 固定解检查规则" />
-          <textarea id="manualContent" rows="4" placeholder="粘贴项目经验、质检规则、作业指导书摘要等内容"></textarea>
-          <div class="button-row">
-            <button id="manualBtn">手动入库并更新索引</button>
-          </div>
-        </section>
-
-        <section class="panel">
-          <h2>5. 爬虫来源管理</h2>
+        <details class="source-manager">
+          <summary>爬虫来源管理</summary>
           <input id="sourceName" placeholder="来源名称，例如：EPSG 4490 CGCS2000" />
           <input id="sourceUrl" placeholder="来源 URL，例如：https://epsg.io/4490" />
           <div class="button-row">
             <button id="addSourceBtn">添加来源</button>
             <button id="listSourcesBtn">查看默认来源</button>
           </div>
-        </section>
+        </details>
       </section>
 
       <aside class="result-panel">
         <div class="panel-head">
-          <h2>回答与更新结果</h2>
+          <h2>任务结果</h2>
           <span id="runtimeState">DeepSeek / OpenAI-compatible</span>
         </div>
-        <div class="crawl-status" id="crawlStatus">
+
+        <div class="task-status">
           <div class="status-head">
-            <strong>爬取状态</strong>
-            <span id="crawlStage">待开始</span>
+            <strong>当前状态</strong>
+            <span id="taskStage">待开始</span>
           </div>
           <div class="status-grid">
             <span>总数：<b id="crawlTotal">0</b></span>
             <span>成功：<b id="crawlSuccess">0</b></span>
             <span>失败：<b id="crawlFailed">0</b></span>
           </div>
-          <div class="status-list" id="crawlStatusList">暂无爬取任务。</div>
+          <div class="status-list" id="crawlStatusList">暂无任务。</div>
         </div>
-        <div class="answer" id="answer">等待提问或知识库更新。</div>
+
+        <div class="answer" id="answer">请选择知识来源并更新知识库，或直接基于当前知识库提问。</div>
         <div class="sources" id="sources"></div>
       </aside>
     </main>
