@@ -1,0 +1,52 @@
+{
+  "sources": [
+    {
+      "id": "epsg-4326",
+      "name": "EPSG 4326 WGS84",
+      "url": "https://epsg.io/4326",
+      "enabled": true,
+      "tags": [
+        "coordinate-system",
+        "epsg",
+        "webgis"
+      ],
+      "description": "WGS84 geographic coordinate system reference."
+    },
+    {
+      "id": "epsg-3857",
+      "name": "EPSG 3857 Web Mercator",
+      "url": "https://epsg.io/3857",
+      "enabled": true,
+      "tags": [
+        "coordinate-system",
+        "epsg",
+        "webgis"
+      ],
+      "description": "Web Mercator coordinate system reference."
+    },
+    {
+      "id": "ogc-geojson",
+      "name": "OGC GeoJSON Standard",
+      "url": "https://docs.ogc.org/is/17-069r3/17-069r3.html",
+      "enabled": false,
+      "tags": [
+        "ogc",
+        "webgis",
+        "geojson"
+      ],
+      "description": "Public OGC GeoJSON standard page. Disabled by default to keep demos light."
+    },
+    {
+      "id": "ogc-api-features",
+      "name": "OGC API Features",
+      "url": "https://docs.ogc.org/is/17-069r4/17-069r4.html",
+      "enabled": false,
+      "tags": [
+        "ogc",
+        "api",
+        "webgis"
+      ],
+      "description": "Public OGC API Features reference. Enable when network is available."
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+services:
+  geosurvey-rag:
+    build: .
+    container_name: geosurvey-rag
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health').read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  index-updater:
+    build: .
+    container_name: geosurvey-rag-index-updater
+    env_file:
+      - .env
+    command: ["python", "-m", "geosurvey_rag.index_updater", "--source", "data/knowledge", "--index", "data/index", "--interval", "30", "--crawl-first"]
+    volumes:
+      - ./data:/app/data

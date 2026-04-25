@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GeoSurveyRAG</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="map-panel">
+        <div class="map-toolbar">
+          <div>
+            <h1>GeoSurveyRAG</h1>
+            <p>测绘知识库问答 · 空间工具调用 · WebGIS 演示</p>
+          </div>
+          <div class="tool-row">
+            <button id="distanceBtn" title="计算已绘制点的折线距离">距离</button>
+            <button id="areaBtn" title="计算已绘制点围成的面积">面积</button>
+            <button id="clearBtn" title="清空画布">清空</button>
+          </div>
+        </div>
+        <svg id="map" viewBox="0 0 1000 620" role="img" aria-label="WebGIS drawing canvas">
+          <defs>
+            <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+              <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#d7e0ea" stroke-width="1" />
+            </pattern>
+          </defs>
+          <rect width="1000" height="620" fill="#f8fbff" />
+          <rect width="1000" height="620" fill="url(#grid)" />
+          <path d="M70 500 C210 410 240 250 390 250 C540 250 560 130 720 135 C820 138 860 210 930 185" fill="none" stroke="#8bb8cc" stroke-width="18" stroke-linecap="round" opacity="0.42" />
+          <path d="M110 110 L335 90 L430 205 L350 350 L150 320 Z" fill="#dbeed8" stroke="#7cac7e" stroke-width="2" opacity="0.72" />
+          <path d="M575 310 L835 285 L905 430 L715 530 L555 450 Z" fill="#f4e3bc" stroke="#c49b45" stroke-width="2" opacity="0.7" />
+          <g id="drawLayer"></g>
+        </svg>
+        <div class="status-line" id="mapStatus">点击地图添加点，系统会按宜昌附近经纬度范围模拟坐标。</div>
+      </section>
+
+      <aside class="assistant-panel">
+        <div class="panel-head">
+          <h2>测绘智能问答</h2>
+          <button id="statusBtn" title="查看知识库索引状态">索引</button>
+        </div>
+        <textarea id="question" rows="6">无人机航测成果入库前需要检查哪些质量项？</textarea>
+        <button class="primary" id="askBtn">提问</button>
+        <div class="answer" id="answer"></div>
+        <div class="sources" id="sources"></div>
+        <div class="knowledge-admin">
+          <h2>Knowledge Intake</h2>
+          <input id="manualTitle" placeholder="Manual title" />
+          <textarea id="manualContent" rows="4" placeholder="Paste surveying notes, project QA, standards excerpt..."></textarea>
+          <button id="manualBtn">Manual Ingest</button>
+          <input id="crawlUrl" placeholder="https://example.com/geospatial-standard" />
+          <button id="crawlBtn">Crawler Ingest</button>
+          <input id="sourceName" placeholder="Crawler source name" />
+          <input id="sourceUrl" placeholder="https://example.com/source-page" />
+          <button id="addSourceBtn">Add Source</button>
+          <button id="listSourcesBtn">List Sources</button>
+        </div>
+      </aside>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

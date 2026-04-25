@@ -1,0 +1,146 @@
+[
+  {
+    "question": "无人机航测成果入库前需要检查哪些质量项？",
+    "expected_terms": ["坐标系统", "像控点", "重叠度", "空三", "DOM"]
+  },
+  {
+    "question": "WebGIS 智能问答系统可以接入哪些 Agent 工具？",
+    "expected_terms": ["距离量测", "面积计算", "坐标转换", "ArcGIS REST"]
+  },
+  {
+    "question": "GNSS 单点定位需要哪些关键步骤？",
+    "expected_terms": ["RINEX", "广播星历", "最小二乘", "钟差"]
+  },
+  {
+    "question": "RAG 系统上线后应该关注哪些评测和运维指标？",
+    "expected_terms": ["召回命中率", "忠实度", "工具调用准确率", "健康检查"]
+  },
+  {
+    "question": "无人机航线规划和影像采集后，空三前重点看什么？",
+    "expected_terms": ["航线规划", "像控点", "影像采集", "空三"]
+  },
+  {
+    "question": "DOM 质量检查常见问题有哪些？",
+    "expected_terms": ["镶嵌线", "拉花", "重影", "色差", "漏洞"]
+  },
+  {
+    "question": "三维模型成果质检应该关注哪些异常？",
+    "expected_terms": ["空洞", "建筑物变形", "水面异常", "纹理错位"]
+  },
+  {
+    "question": "测绘成果入库为什么要统一元数据？",
+    "expected_terms": ["测区范围", "分辨率", "生产时间", "坐标参考"]
+  },
+  {
+    "question": "WebGIS 智能问答后端为什么适合用 FastAPI？",
+    "expected_terms": ["FastAPI", "RAG", "工具调用", "日志审计"]
+  },
+  {
+    "question": "向量数据库在测绘知识库问答里可以选择哪些方案？",
+    "expected_terms": ["FAISS", "Milvus", "Qdrant", "Elasticsearch"]
+  },
+  {
+    "question": "Prompt 需要如何约束测绘问答的回答边界？",
+    "expected_terms": ["引用来源", "坐标系统", "不确定性", "补充项"]
+  },
+  {
+    "question": "线上运行 WebGIS RAG 应用应监控哪些指标？",
+    "expected_terms": ["接口延迟", "召回命中率", "Token 成本", "工具调用成功率"]
+  },
+  {
+    "question": "GNSS 单点定位为什么需要广播星历？",
+    "expected_terms": ["广播星历", "卫星位置", "卫星钟差"]
+  },
+  {
+    "question": "GNSS 伪距定位的误差改正包括哪些？",
+    "expected_terms": ["电离层延迟", "对流层延迟", "地球自转改正", "相对论效应"]
+  },
+  {
+    "question": "GNSS 定位质量可以用哪些指标评价？",
+    "expected_terms": ["GDOP", "PDOP", "残差", "可见卫星数"]
+  },
+  {
+    "question": "LLM 在 GNSS 解算流程中更适合承担什么角色？",
+    "expected_terms": ["解释问题", "选择算法路径", "参数建议", "Python"]
+  },
+  {
+    "question": "RAG 系统评测为什么要关注忠实度？",
+    "expected_terms": ["忠实度", "上下文", "编造"]
+  },
+  {
+    "question": "Prompt 迭代应记录哪些变量？",
+    "expected_terms": ["版本", "模型", "温度", "TopK", "切片大小"]
+  },
+  {
+    "question": "线上 A/B 测试可以比较哪些 LLM 应用指标？",
+    "expected_terms": ["用户点赞率", "追问率", "平均响应延迟", "Token 成本"]
+  },
+  {
+    "question": "测绘生产系统为什么需要数据权限和审计留痕？",
+    "expected_terms": ["数据权限", "涉密数据隔离", "审计留痕"]
+  },
+  {
+    "question": "地籍测量的核心目标是什么？",
+    "expected_terms": ["宗地位置", "界址点", "权属边界", "面积"]
+  },
+  {
+    "question": "不动产测绘外业需要采集哪些对象？",
+    "expected_terms": ["界址线", "建筑物", "道路", "水系"]
+  },
+  {
+    "question": "宗地拓扑检查常见问题有哪些？",
+    "expected_terms": ["重叠", "缝隙", "悬挂线", "重复点"]
+  },
+  {
+    "question": "面积计算成果说明需要包含哪些内容？",
+    "expected_terms": ["坐标系统", "投影方式", "计算方法", "小数位"]
+  },
+  {
+    "question": "不动产成果入库需要提交哪些材料？",
+    "expected_terms": ["宗地图", "界址点成果表", "面积汇总表", "质量检查记录"]
+  },
+  {
+    "question": "常见测绘坐标系统有哪些？",
+    "expected_terms": ["WGS84", "CGCS2000", "西安 80", "北京 54", "Web Mercator"]
+  },
+  {
+    "question": "坐标转换前需要确认哪些参数？",
+    "expected_terms": ["EPSG", "三参数", "七参数", "格网改正模型"]
+  },
+  {
+    "question": "WebGIS 为什么常用 EPSG:3857？",
+    "expected_terms": ["WGS84", "EPSG:3857", "Web Mercator", "地图切片"]
+  },
+  {
+    "question": "坐标转换精度可以如何评估？",
+    "expected_terms": ["公共点残差", "检查点误差", "闭合差"]
+  },
+  {
+    "question": "遥感影像处理常见步骤有哪些？",
+    "expected_terms": ["辐射校正", "几何校正", "正射校正", "监督分类"]
+  },
+  {
+    "question": "遥感分类成果精度评价有哪些指标？",
+    "expected_terms": ["混淆矩阵", "总体精度", "Kappa", "用户精度"]
+  },
+  {
+    "question": "LiDAR 点云处理通常包括哪些步骤？",
+    "expected_terms": ["点云去噪", "地面点分类", "DEM", "点云配准"]
+  },
+  {
+    "question": "LiDAR 成果质检需要关注什么？",
+    "expected_terms": ["点密度", "高程精度", "空洞", "噪声残留"]
+  },
+  {
+    "question": "RTK 外业作业需要关注哪些状态？",
+    "expected_terms": ["固定解比例", "PDOP", "卫星数", "差分延迟"]
+  },
+  {
+    "question": "全站仪和水准测量分别要检查哪些闭合误差？",
+    "expected_terms": ["测站定向", "后视检查", "闭合差", "往返测高差"]
+  },
+  {
+    "question": "Python 自动清洗测量数据可以检查哪些问题？",
+    "expected_terms": ["空值", "重复点", "异常坐标", "超限误差"]
+  }
+]
