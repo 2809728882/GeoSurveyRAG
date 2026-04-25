@@ -1,34 +1,41 @@
 # GeoSurveyRAG
 
-GeoSurveyRAG is a geospatial RAG and tool-calling application for surveying, WebGIS, GNSS, cadastral mapping, remote sensing, and field data quality workflows.
+面向测绘工程与 WebGIS 场景的 RAG + Agent 智能问答项目。
 
-It combines a knowledge base, retrieval pipeline, geospatial tools, source management, offline evaluation, and a lightweight WebGIS interface into one deployable FastAPI service.
+GeoSurveyRAG 将测绘知识库、向量检索、空间工具调用、爬虫/手动入库、离线评测和 WebGIS 前端整合成一个可部署的 FastAPI 应用。项目示例覆盖无人机航测、GNSS、地籍测量、坐标转换、遥感/LiDAR、RTK 外业和测绘成果质检等典型业务场景。
 
-## Features
+## 作者状态
 
-- **Geospatial RAG**: ingest Markdown/TXT documents, split them into chunks, index them, retrieve relevant context, and generate traceable answers.
-- **Vector backend switch**: use the built-in JSON index for lightweight local demos, or switch to FAISS for a more production-like vector search workflow.
-- **Tool calling**: distance measurement, polygon area calculation, coordinate transformation, and WKT bounding-box parsing.
-- **Knowledge intake**: add content manually, manage crawler sources, crawl public pages, and rebuild the index automatically.
-- **WebGIS interface**: draw points on a map-like canvas, calculate distance/area, ask questions, and inspect index/source status.
-- **Evaluation workflow**: run 36 geospatial golden questions and generate a Markdown evaluation report.
-- **Deployable service**: FastAPI, Docker, Docker Compose, health checks, environment configuration, and CI workflow.
+作者目前正在求职，方向包括 **LLM 应用工程师、AI 应用开发、RAG/Agent 工程、WebGIS 开发、测绘/GIS 数据工程** 等。
 
-## Architecture
+- 联系方式：15392993401
+- 微信：15392993401
+
+## 项目亮点
+
+- **测绘知识库 RAG**：支持 Markdown/TXT 文档入库、切片、索引、检索、上下文拼接和来源追踪。
+- **向量后端可切换**：默认使用轻量 JSON 索引，便于本地运行；可切换到 FAISS，后续也可扩展 Milvus/Qdrant。
+- **Agent 工具调用**：内置距离量测、闭合多边形面积计算、坐标转换、WKT 边界框解析等空间工具。
+- **双通道知识入库**：支持手动录入项目经验和质检规则，也支持管理爬虫来源并同步公开网页。
+- **WebGIS 前端**：提供地图画点、距离/面积计算、知识库问答、索引状态查看和知识入库入口。
+- **评测闭环**：内置 36 条测绘领域 golden questions，可生成 Markdown 评测报告。
+- **工程化部署**：提供 FastAPI 服务、Docker、Docker Compose、健康检查、环境变量配置和 CI workflow。
+
+## 目录结构
 
 ```text
 GeoSurveyRAG/
-  src/geosurvey_rag/        # application code
-  data/knowledge/           # sample geospatial knowledge base
-  data/sources/             # crawler source configuration
-  eval/                     # golden questions
-  docs/                     # architecture, ingestion, evaluation, vector backend docs
-  examples/                 # CLI examples
-  tests/                    # unit tests
-  web/                      # browser UI served by FastAPI
+  src/geosurvey_rag/        # 应用核心代码
+  data/knowledge/           # 示例测绘知识库
+  data/sources/             # 爬虫来源配置
+  eval/                     # golden questions 评测集
+  docs/                     # 架构、入库、评测、向量后端文档
+  examples/                 # CLI 示例
+  tests/                    # 单元测试
+  web/                      # FastAPI 托管的前端页面
 ```
 
-## Quick Start
+## 快速开始
 
 ```powershell
 cd D:\github\GeoSurveyRAG
@@ -39,13 +46,13 @@ python -m geosurvey_rag.ingestion --source data\knowledge --index data\index
 uvicorn geosurvey_rag.api:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Open:
+浏览器打开：
 
 ```text
 http://127.0.0.1:8000
 ```
 
-Ask a question:
+问答接口示例：
 
 ```bash
 curl -X POST http://127.0.0.1:8000/chat \
@@ -53,7 +60,7 @@ curl -X POST http://127.0.0.1:8000/chat \
   -d "{\"question\":\"无人机航测成果入库前需要检查哪些质量项？\"}"
 ```
 
-Use a geospatial tool:
+空间工具示例：
 
 ```bash
 curl -X POST http://127.0.0.1:8000/tool/distance \
@@ -61,9 +68,11 @@ curl -X POST http://127.0.0.1:8000/tool/distance \
   -d "{\"points\":[[111.30,30.70],[111.32,30.72]],\"unit\":\"m\"}"
 ```
 
-## Knowledge Intake
+## 知识库入库
 
-Manual intake is useful for internal notes, project QA rules, field survey checklists, and operation guides.
+### 手动入库
+
+适合录入内部项目经验、外业检查规则、质检清单、作业指导书摘要等内容。
 
 ```bash
 curl -X POST http://127.0.0.1:8000/admin/knowledge/manual \
@@ -71,45 +80,55 @@ curl -X POST http://127.0.0.1:8000/admin/knowledge/manual \
   -d "{\"title\":\"RTK 固定解检查规则\",\"category\":\"field-survey\",\"content\":\"RTK 外业采集前应检查固定解比例、PDOP、卫星数和差分延迟。\",\"rebuild\":true}"
 ```
 
-Crawler intake can synchronize public documentation pages. Default crawler sources are configured in `data/sources/crawler_sources.json`.
+### 爬虫入库
+
+默认爬虫来源配置在 `data/sources/crawler_sources.json`。当前预置来源包括：
+
+- EPSG 4326 WGS84：默认启用
+- EPSG 3857 Web Mercator：默认启用
+- OGC GeoJSON Standard：默认关闭
+- OGC API Features：默认关闭
+
+常用命令：
 
 ```powershell
 python -m geosurvey_rag.knowledge_sources list-sources
 python -m geosurvey_rag.knowledge_sources add-source --name "EPSG 4490 CGCS2000" --url "https://epsg.io/4490" --tag epsg --tag cgcs2000
+python -m geosurvey_rag.knowledge_sources enable-source --id ogc-geojson
 python -m geosurvey_rag.knowledge_sources crawl
 ```
 
-More details: [docs/knowledge_ingestion.md](docs/knowledge_ingestion.md)
+更多说明：[docs/knowledge_ingestion.md](docs/knowledge_ingestion.md)
 
-## Index Updates
+## 索引更新
 
-Rebuild manually:
+手动重建索引：
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/admin/index/rebuild?force=false"
 ```
 
-Check index status:
+查看索引状态：
 
 ```bash
 curl http://127.0.0.1:8000/admin/index/status
 ```
 
-Run the watcher:
+启动自动更新器：
 
 ```powershell
 python -m geosurvey_rag.index_updater --source data\knowledge --index data\index --interval 30
 ```
 
-Run the watcher with crawler sync first:
+先同步爬虫来源，再检查是否需要重建索引：
 
 ```powershell
 python -m geosurvey_rag.index_updater --source data\knowledge --index data\index --interval 300 --crawl-first
 ```
 
-## FAISS Backend
+## FAISS 向量后端
 
-The default backend is a lightweight JSON index. To use FAISS:
+默认后端是轻量 JSON 索引。如果需要使用 FAISS：
 
 ```powershell
 pip install -r requirements-llm.txt
@@ -118,44 +137,44 @@ python -m geosurvey_rag.ingestion --source data\knowledge --index data\index --b
 uvicorn geosurvey_rag.api:app --reload --host 0.0.0.0 --port 8000
 ```
 
-FAISS generates:
+FAISS 会生成：
 
 ```text
 data/index/faiss.index
 data/index/faiss_chunks.jsonl
 ```
 
-More details: [docs/vector_backends.md](docs/vector_backends.md)
+更多说明：[docs/vector_backends.md](docs/vector_backends.md)
 
-## Evaluation
+## 评测
 
-Run offline evaluation and generate a report:
+运行离线评测并生成报告：
 
 ```powershell
 python -m geosurvey_rag.evaluation --eval eval\golden_questions.json --top-k 4 --report docs\eval_report.md
 ```
 
-Current evaluation set covers UAV mapping, WebGIS, GNSS, cadastral surveying, coordinate transformation, remote sensing, LiDAR, RTK, total station workflows, leveling, and data cleaning.
+当前评测集覆盖无人机航测、WebGIS、GNSS、地籍测量、坐标转换、遥感/LiDAR、RTK、全站仪、水准测量和测量数据清洗。
 
-More details: [docs/evaluation.md](docs/evaluation.md)
+更多说明：[docs/evaluation.md](docs/evaluation.md)
 
-## Docker
+## Docker 部署
 
 ```powershell
 docker build -t geosurvey-rag:latest .
 docker run --rm -p 8000:8000 geosurvey-rag:latest
 ```
 
-Or:
+也可以使用 Docker Compose：
 
 ```powershell
 docker compose up --build
 ```
 
-## Roadmap
+## 后续计划
 
-- Add Milvus/Qdrant as distributed vector database backends.
-- Replace hash embeddings with a real embedding model such as BGE, Qwen Embedding, or OpenAI embeddings.
-- Connect PostGIS, GeoServer, ArcGIS REST, or SuperMap iServer for real layer queries.
-- Add authentication, audit logs, source-level permissions, and request tracing.
-- Add a richer map frontend with real tiles and layer overlays.
+- 接入 Milvus/Qdrant 作为分布式向量数据库后端。
+- 使用 BGE、Qwen Embedding 或 OpenAI Embeddings 替换当前哈希向量。
+- 接入 PostGIS、GeoServer、ArcGIS REST 或 SuperMap iServer 做真实图层查询。
+- 增加鉴权、审计日志、来源级权限控制和请求链路追踪。
+- 将前端升级为真实地图底图、图层叠加和空间查询界面。
