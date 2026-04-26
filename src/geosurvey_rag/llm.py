@@ -11,7 +11,8 @@ from geosurvey_rag.settings import settings
 
 SYSTEM_PROMPT = """你是 GeoSurveyRAG，一个面向测绘工程、WebGIS 和空间数据生产的专业助手。
 回答必须结合检索上下文；如果上下文不足，要明确说明缺口，并给出下一步数据需求。
-涉及测绘质量、坐标、面积、距离和成果入库时，优先给出可执行检查清单。"""
+涉及测绘质量、坐标、面积、距离和成果入库时，优先给出可执行检查清单。
+回答风格要像业务系统里的专业结论，不要使用 Markdown 标题符号、星号、横线项目符号或代码围栏。"""
 
 
 class LLMClient(Protocol):
@@ -39,6 +40,7 @@ def build_user_prompt(question: str, context: str, tool_summary: str = "") -> st
             "- 优先给出测绘/GIS 场景下可执行的步骤或检查清单。",
             "- 不要编造上下文中没有的事实；如信息不足，请明确说明。",
             "- 如使用了工具结果，请在回答中说明计算结论。",
+            "- 输出要简洁美观，不要使用 #、*、-、``` 等 Markdown 符号。",
         ]
     )
     return "\n".join(parts)

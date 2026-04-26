@@ -8,34 +8,75 @@
   </head>
   <body>
     <main class="app-shell">
-      <section class="workflow">
+      <section class="workspace">
         <header class="topbar">
           <div>
             <h1>GeoSurveyRAG</h1>
-            <p>测绘知识更新与 RAG 问答工作台</p>
+            <p>测绘工程知识库管理与 RAG 问答系统</p>
           </div>
           <button id="statusBtn">索引状态</button>
         </header>
 
-        <section class="step">
-          <div class="step-title">
-            <span>1</span>
+        <section class="panel ask-panel">
+          <div class="panel-title">
+            <span>问答</span>
             <div>
-              <h2>选择知识来源</h2>
-              <p>选择一种方式更新知识库。推荐先用 URL 或文件入库，再提问验证。</p>
+              <h2>选择回答模式</h2>
+              <p>按场景选择是否调用大模型、是否先联网采集资料。</p>
             </div>
           </div>
 
-          <div class="source-tabs" role="tablist" aria-label="知识来源">
-            <button class="tab active" data-source="url">URL 爬取</button>
+          <div class="mode-grid" role="radiogroup" aria-label="回答模式">
+            <label class="mode-card active">
+              <input type="radio" name="answerMode" value="local" checked />
+              <strong>纯本地知识库匹配</strong>
+              <small>只检索本地知识库，不调用大模型。</small>
+            </label>
+            <label class="mode-card">
+              <input type="radio" name="answerMode" value="knowledge_ai" />
+              <strong>知识库 + AI</strong>
+              <small>先检索知识库，再由大模型组织专业回答。</small>
+            </label>
+            <label class="mode-card">
+              <input type="radio" name="answerMode" value="knowledge_ai_search" />
+              <strong>知识库 + AI + 联网采集</strong>
+              <small>先爬取 URL 入库并重建索引，再生成回答。</small>
+            </label>
+          </div>
+
+          <div class="search-urls hidden" id="searchUrlBox">
+            <label for="searchUrls">联网采集 URL</label>
+            <textarea id="searchUrls" rows="4" placeholder="每行一个资料 URL，也可以直接输入 epsg.io/3857 这类域名或页面地址"></textarea>
+            <p class="hint">不填写时会使用已启用的默认爬虫来源；填写 URL 时会优先采集这些页面。</p>
+          </div>
+
+          <label for="question">问题</label>
+          <textarea id="question" rows="5">无人机航测成果入库前需要检查哪些质量项？请按检查清单回答。</textarea>
+          <div class="button-row">
+            <button class="primary" id="askBtn">开始回答</button>
+            <button id="crawlAskBtn">先更新知识库再回答</button>
+          </div>
+        </section>
+
+        <section class="panel manage-panel">
+          <div class="panel-title">
+            <span>管理</span>
+            <div>
+              <h2>知识库更新</h2>
+              <p>支持网页采集、文件上传和手动录入，更新后自动重建索引。</p>
+            </div>
+          </div>
+
+          <div class="source-tabs" role="tablist" aria-label="知识库来源">
+            <button class="tab active" data-source="url">网页采集</button>
             <button class="tab" data-source="file">文件上传</button>
             <button class="tab" data-source="manual">手动录入</button>
           </div>
 
           <div class="source-panel active" id="source-url">
             <label for="crawlUrls">资料 URL</label>
-            <textarea id="crawlUrls" rows="5" placeholder="每行一个 URL，例如：https://epsg.io/3857"></textarea>
-            <p class="hint">适合先在浏览器搜索可靠资料，再把页面 URL 粘贴进来，由系统爬取并入库。</p>
+            <textarea id="crawlUrls" rows="5" placeholder="每行一个 URL，例如：https://epsg.io/4490"></textarea>
+            <p class="hint">爬虫会自适应 HTML、PDF、JSON、纯文本页面，并记录标题、最终 URL、内容类型和入库路径。</p>
           </div>
 
           <div class="source-panel" id="source-file">
@@ -52,68 +93,65 @@
             <label for="manualContent">内容</label>
             <textarea id="manualContent" rows="5" placeholder="粘贴项目经验、质检规则、作业指导书摘要等内容"></textarea>
           </div>
-        </section>
 
-        <section class="step">
-          <div class="step-title">
-            <span>2</span>
-            <div>
-              <h2>更新知识库</h2>
-              <p>系统会解析资料、写入知识库并重建索引。</p>
-            </div>
-          </div>
           <div class="button-row">
             <button class="primary" id="updateKnowledgeBtn">更新知识库</button>
-            <button id="crawlAskBtn">更新后直接回答</button>
+            <button id="refreshDocsBtn">刷新文档列表</button>
           </div>
         </section>
 
-        <section class="step">
-          <div class="step-title">
-            <span>3</span>
+        <section class="panel source-manager">
+          <div class="panel-title">
+            <span>来源</span>
             <div>
-              <h2>提问验证</h2>
-              <p>基于当前知识库检索上下文，并调用大模型生成回答。</p>
+              <h2>默认爬虫来源</h2>
+              <p>可添加、启用或停用公开资料来源，供自动更新使用。</p>
             </div>
           </div>
-          <textarea id="question" rows="5">无人机航测成果入库前需要检查哪些质量项？请按检查清单回答。</textarea>
-          <div class="button-row">
-            <button class="primary" id="askBtn">基于当前知识库回答</button>
-          </div>
-        </section>
-
-        <details class="source-manager">
-          <summary>爬虫来源管理</summary>
-          <input id="sourceName" placeholder="来源名称，例如：EPSG 4490 CGCS2000" />
-          <input id="sourceUrl" placeholder="来源 URL，例如：https://epsg.io/4490" />
-          <div class="button-row">
+          <div class="source-form">
+            <input id="sourceName" placeholder="来源名称，例如：EPSG 4490 CGCS2000" />
+            <input id="sourceUrl" placeholder="来源 URL，例如：https://epsg.io/4490" />
             <button id="addSourceBtn">添加来源</button>
-            <button id="listSourcesBtn">查看默认来源</button>
           </div>
-        </details>
+          <div class="button-row">
+            <button id="listSourcesBtn">刷新来源列表</button>
+          </div>
+          <div class="manager-list" id="sourceList">暂无来源数据。</div>
+        </section>
       </section>
 
       <aside class="result-panel">
         <div class="panel-head">
-          <h2>任务结果</h2>
-          <span id="runtimeState">DeepSeek / OpenAI-compatible</span>
+          <div>
+            <h2>运行结果</h2>
+            <p>DeepSeek / OpenAI-compatible</p>
+          </div>
+          <span id="taskStage">待开始</span>
         </div>
 
         <div class="task-status">
-          <div class="status-head">
-            <strong>当前状态</strong>
-            <span id="taskStage">待开始</span>
-          </div>
           <div class="status-grid">
-            <span>总数：<b id="crawlTotal">0</b></span>
+            <span>任务总数：<b id="crawlTotal">0</b></span>
             <span>成功：<b id="crawlSuccess">0</b></span>
             <span>失败：<b id="crawlFailed">0</b></span>
           </div>
           <div class="status-list" id="crawlStatusList">暂无任务。</div>
         </div>
 
-        <div class="answer" id="answer">请选择知识来源并更新知识库，或直接基于当前知识库提问。</div>
-        <div class="sources" id="sources"></div>
+        <section class="answer-box">
+          <h3>回答</h3>
+          <div class="answer" id="answer">请选择回答模式后提问，或先在知识库管理区补充资料。</div>
+        </section>
+
+        <section class="sources-box">
+          <h3>引用来源</h3>
+          <div class="sources" id="sources">暂无引用。</div>
+        </section>
+
+        <section class="documents-box">
+          <h3>知识库文档</h3>
+          <div class="documents" id="documentList">点击“刷新文档列表”查看当前入库资料。</div>
+        </section>
       </aside>
     </main>
     <script src="/static/app.js"></script>

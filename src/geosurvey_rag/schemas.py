@@ -7,6 +7,8 @@ class ChatRequest(BaseModel):
     question: str = Field(..., min_length=2, examples=["无人机航测成果入库前需要检查哪些质量项？"])
     top_k: int | None = Field(default=None, ge=1, le=10)
     use_tools: bool = True
+    mode: str = "knowledge_ai"
+    urls: list[str] | None = None
 
 
 class SourceChunk(BaseModel):
@@ -26,6 +28,8 @@ class ChatResponse(BaseModel):
     answer: str
     sources: list[SourceChunk]
     tool_calls: list[ToolCall] = []
+    mode: str = "knowledge_ai"
+    crawl: dict | None = None
 
 
 class DistanceRequest(BaseModel):

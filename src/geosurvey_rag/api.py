@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+from datetime import datetime
 from pathlib import Path
 from zipfile import BadZipFile
 
@@ -47,6 +49,46 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 WEB_DIR = PROJECT_ROOT / "web"
 
 
+def polish_answer(answer: str) -> str:
+    """Make model output read like business text instead of raw Markdown."""
+    lines = []
+    for raw_line in answer.splitlines():
+        line = raw_line.strip()
+        line = re.sub(r"^#{1,6}\s*", "", line)
+        line = re.sub(r"^[-*+]\s+", "", line)
+        line = re.sub(r"\*\*(.*?)\*\*", r"\1", line)
+        line = re.sub(r"`([^`]*)`", r"\1", line)
+        lines.append(line)
+    compact = []
+    previous_blank = False
+    for line in lines:
+        blank = not line
+        if blank and previous_blank:
+            continue
+        compact.append(line)
+        previous_blank = blank
+    return "\n".join(compact).strip()
+
+
+def read_front_matter(path: Path) -> dict:
+    try:
+        text = path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return {}
+    if not text.startswith("---"):
+        return {}
+    end = text.find("\n---", 3)
+    if end == -1:
+        return {}
+    meta = {}
+    for line in text[3:end].splitlines():
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        meta[key.strip()] = value.strip()
+    return meta
+
+
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "app": settings.app_name}
@@ -64,6 +106,32 @@ def index_status() -> dict:
         "ready": manifest is not None,
         "manifest": manifest or {},
     }
+
+
+@app.get("/admin/knowledge/documents")
+def knowledge_documents() -> dict:
+    documents = []
+    if settings.knowledge_dir.exists():
+        for path in sorted(settings.knowledge_dir.rglob("*")):
+            if not path.is_file():
+                continue
+            if path.suffix.lower() not in {".md", ".txt", ".csv", ".tsv", ".json"}:
+                continue
+            stat = path.stat()
+            meta = read_front_matter(path)
+            documents.append(
+                {
+                    "path": str(path),
+                    "relative_path": str(path.relative_to(settings.knowledge_dir)),
+                    "title": meta.get("title") or path.stem,
+                    "source_type": meta.get("source_type") or "file",
+                    "source_name": meta.get("source_name") or meta.get("category") or "",
+                    "url": meta.get("final_url") or meta.get("url") or "",
+                    "size_kb": round(stat.st_size / 1024, 1),
+                    "modified_at": datetime.fromtimestamp(stat.st_mtime).isoformat(timespec="seconds"),
+                }
+            )
+    return {"count": len(documents), "documents": documents}
 
 
 @app.post("/admin/index/rebuild")
@@ -175,13 +243,31 @@ def delete_source(source_id: str) -> dict:
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest) -> ChatResponse:
+    global rag
+    mode = request.mode or "knowledge_ai"
+    crawl_result = None
+    if mode == "local":
+        answer, sources = rag.answer_local(request.question, top_k=request.top_k)
+        return ChatResponse(answer=polish_answer(answer), sources=sources, tool_calls=[], mode=mode)
+
+    if mode == "knowledge_ai_search":
+        crawl_result = crawl_sources(request.urls)
+        reindex_if_needed(settings.knowledge_dir, settings.index_dir, force=True)
+        rag = RagPipeline(settings.index_dir)
+
     tool_calls = agent.maybe_run_tools(request.question) if request.use_tools else []
     answer, sources = rag.answer(
         request.question,
         top_k=request.top_k,
         tool_summary=format_tool_summary(tool_calls),
     )
-    return ChatResponse(answer=answer, sources=sources, tool_calls=tool_calls)
+    return ChatResponse(
+        answer=polish_answer(answer),
+        sources=sources,
+        tool_calls=tool_calls,
+        mode=mode,
+        crawl=crawl_result,
+    )
 
 
 @app.post("/tool/distance")
