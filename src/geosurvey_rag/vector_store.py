@@ -155,20 +155,28 @@ class FaissVectorStore:
         if self._vectors:
             matrix = np.array(self._vectors, dtype="float32")
             index.add(matrix)
-        faiss.write_index(index, str(self.faiss_path))
+        # FAISS C++ filename I/O fails with Unicode paths on Windows.
+        # Serialize through Python's Unicode-aware filesystem instead.
+        self.faiss_path.write_bytes(faiss.serialize_index(index).tobytes())
         with self.meta_path.open("w", encoding="utf-8") as file:
             for chunk in self.chunks:
                 file.write(json.dumps(asdict(chunk), ensure_ascii=False) + "\n")
 
     def load(self) -> "FaissVectorStore":
-        faiss, _np = self._import_faiss()
+        faiss, np = self._import_faiss()
         self.chunks = []
+        if self.faiss_path.exists() != self.meta_path.exists():
+            raise ValueError("FAISS index and chunk metadata must both exist; rebuild the index.")
         if self.faiss_path.exists():
-            self.index = faiss.read_index(str(self.faiss_path))
+            self.index = faiss.deserialize_index(np.frombuffer(self.faiss_path.read_bytes(), dtype="uint8").copy())
+            if self.index.d != self.dim:
+                raise ValueError("FAISS embedding dimension changed; rebuild the index.")
         if self.meta_path.exists():
             with self.meta_path.open("r", encoding="utf-8") as file:
                 for line in file:
                     self.chunks.append(DocumentChunk(**json.loads(line)))
+        if self.index is not None and self.index.ntotal != len(self.chunks):
+            raise ValueError("FAISS index and metadata sizes differ; rebuild the index.")
         return self
 
     def search(self, query: str, top_k: int = 4) -> list[tuple[DocumentChunk, float]]:

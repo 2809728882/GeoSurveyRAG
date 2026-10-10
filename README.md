@@ -4,6 +4,15 @@
 
 GeoSurveyRAG 将测绘知识库、向量检索、空间工具调用、爬虫/手动入库、离线评测和 WebGIS 前端整合成一个可部署的 FastAPI 应用。项目示例覆盖无人机航测、GNSS、地籍测量、坐标转换、遥感/LiDAR、RTK 外业和测绘成果质检等典型业务场景。
 
+## 0.2 更新
+
+- **混合检索与引用**：BM25 与词频/哈希向量排序通过 RRF 融合，支持来源筛选、相似度阈值、片段编号和资料引用；无资料且无工具结果时直接提示补充资料。
+- **测绘计算校验**：默认使用 WGS84 椭球测地线距离和多边形面积，校验经纬度、单位、自交多边形、EPSG 与 WKT；保留球面距离作为显式选项。
+- **Windows 可用性**：修复 FAISS 中文路径读写，检查索引维度和元数据一致性；知识库来源显示相对路径。
+- **可复现验证**：41 项自动化测试；40 条离线评测（36 条测绘问题 + 4 条无关问题），独立统计来源命中、MRR、检索覆盖率和回答覆盖率；Windows/Linux CI 验证 JSON/FAISS。
+
+默认 JSON 演示库的 Hit@4 为 **100%**，MRR 为 **0.9583**，离线摘录回答关键词覆盖率为 **79.86%**，4 条无关问题均为空召回。这里是小型演示集结果，不是生产准确率或真实大模型回答质量。完整结果见 [评测报告](docs/eval_report.md) 和 [机器可读结果](docs/eval_results.json)。
+
 ## 作者
 
 - 微信：15392993401
@@ -12,12 +21,12 @@ GeoSurveyRAG 将测绘知识库、向量检索、空间工具调用、爬虫/手
 
 - **测绘知识库 RAG**：支持 Markdown/TXT 文档入库、切片、索引、检索、上下文拼接和来源追踪。
 - **向量后端可切换**：默认使用轻量 JSON 索引，便于本地运行；可切换到 FAISS，后续也可扩展 Milvus/Qdrant。
-- **Agent 工具调用**：内置距离量测、闭合多边形面积计算、坐标转换、WKT 边界框解析等空间工具。
+- **Agent 工具调用**：通过规则识别坐标和意图，调用距离量测、闭合多边形面积计算、坐标转换、WKT 边界框解析；当前是确定性工具路由，不依赖大模型决定调用。
 - **三种回答模式**：支持“纯本地知识库匹配”“知识库 + AI”“知识库 + AI + 联网采集”，方便演示不同业务场景下的 RAG 链路。
 - **知识库管理界面**：支持网页采集、文件上传、手动录入、默认来源管理、入库文档列表和任务状态追踪。
 - **自适应网页爬虫**：支持 URL 自动规范化、HTML 正文抽取、PDF/JSON/纯文本解析、编码识别、标题识别、最终跳转 URL 记录和失败状态反馈。
 - **多格式文件上传**：支持 PDF、Word DOCX、Excel XLSX、CSV、JSON、TXT、Markdown 上传后自动解析入库。
-- **评测闭环**：内置 36 条测绘领域 golden questions，可生成 Markdown 评测报告。
+- **评测闭环**：内置 40 条评测样本，可生成 Markdown / JSON 报告，分开衡量检索与回答。
 - **工程化部署**：提供 FastAPI 服务、Docker、Docker Compose、健康检查、环境变量配置和 CI workflow。
 
 ## 目录结构
@@ -37,12 +46,13 @@ GeoSurveyRAG/
 ## 快速开始
 
 ```powershell
-cd D:\github\GeoSurveyRAG
+git clone https://github.com/2809728882/GeoSurveyRAG.git
+cd GeoSurveyRAG
 python -m venv .venv
 .\.venv\Scripts\activate
-pip install -r requirements.txt
+python -m pip install -e ".[dev]"
 python -m geosurvey_rag.ingestion --source data\knowledge --index data\index
-uvicorn geosurvey_rag.api:app --reload --host 0.0.0.0 --port 8000
+uvicorn geosurvey_rag.api:app --reload --host 127.0.0.1 --port 8000
 ```
 
 浏览器打开：
@@ -205,7 +215,7 @@ python -m geosurvey_rag.index_updater --source data\knowledge --index data\index
 默认后端是轻量 JSON 索引。如果需要使用 FAISS：
 
 ```powershell
-pip install -r requirements-llm.txt
+python -m pip install -e ".[faiss]"
 $env:VECTOR_BACKEND="faiss"
 python -m geosurvey_rag.ingestion --source data\knowledge --index data\index --backend faiss
 uvicorn geosurvey_rag.api:app --reload --host 0.0.0.0 --port 8000
@@ -225,10 +235,28 @@ data/index/faiss_chunks.jsonl
 运行离线评测并生成报告：
 
 ```powershell
-python -m geosurvey_rag.evaluation --eval eval\golden_questions.json --top-k 4 --report docs\eval_report.md
+python -m geosurvey_rag.evaluation --eval eval\golden_questions.json --top-k 4 --report docs\eval_report.md --json docs\eval_results.json
 ```
 
 当前评测集覆盖无人机航测、WebGIS、GNSS、地籍测量、坐标转换、遥感/LiDAR、RTK、全站仪、水准测量和测量数据清洗。
+
+运行自动化测试：`python -m pytest -q`。测试覆盖实际接口、上传/手动入库后重建检索、异常模型响应、中文路径 FAISS、数值计算及异常输入，不需要 API Key 或联网采集。
+
+## 检索与空间工具示例
+
+```json
+{"question":"GNSS 单点定位需要哪些步骤？","mode":"local","source_filter":"gnss_positioning_notes.md","top_k":3}
+```
+
+将上述 JSON 提交到 `/chat`；返回片段带 `citation_id`，`retrieval_status` 表明是否存在检索证据。默认 `RETRIEVAL_MODE=hybrid`，可设置为 `vector` 比较单路向量结果。`MIN_SIMILARITY=0.04` 是原始词频余弦阈值；完整 EPSG 标识精确匹配可保留长文档中的相关片段，展示的 RRF 排序分数不是置信概率。
+
+在“知识库 + AI”模式提问以下示例，会触发对应工具：
+
+- `计算 (111.30,30.70) 到 (111.32,30.72) 的距离，单位公里`
+- `把 (111.3,30.7) 从 EPSG:4326 转为 EPSG:3857`
+- `请计算 POLYGON((0 0,2 0,2 1,0 1,0 0)) 的边界框`
+
+空间接口输入均按 `(经度, 纬度)` / `xy` 顺序处理。距离支持 `m/km`，面积支持 `m2/km2/ha`。非法字段返回 422，非法几何或 CRS 返回 400。面积接口只处理单个无孔、简单地块，输出椭球表面积；工程投影面积、高程基准及地方坐标参数需另行检核。函数名 `polygon_area_lambert` 为兼容旧调用保留，当前 `method` 已改为 `wgs84_geodesic`。
 
 更多说明：[docs/evaluation.md](docs/evaluation.md)
 

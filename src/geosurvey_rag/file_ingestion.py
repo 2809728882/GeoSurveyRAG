@@ -4,7 +4,6 @@ import csv
 import io
 import json
 from pathlib import Path
-from zipfile import BadZipFile
 
 from geosurvey_rag.knowledge_sources import content_sha1, now_iso, slugify
 from geosurvey_rag.settings import settings
@@ -50,13 +49,17 @@ def parse_json(data: bytes) -> str:
 def parse_pdf(data: bytes) -> str:
     try:
         from pypdf import PdfReader
+        from pypdf.errors import PdfReadError
     except ImportError as exc:
         raise RuntimeError("PDF support requires pypdf.") from exc
 
-    reader = PdfReader(io.BytesIO(data))
-    pages = []
-    for index, page in enumerate(reader.pages, start=1):
-        pages.append(f"## Page {index}\n\n{page.extract_text() or ''}")
+    try:
+        reader = PdfReader(io.BytesIO(data))
+        pages = []
+        for index, page in enumerate(reader.pages, start=1):
+            pages.append(f"## Page {index}\n\n{page.extract_text() or ''}")
+    except PdfReadError as exc:
+        raise ValueError("PDF is corrupt or encrypted; upload a readable text-based PDF.") from exc
     return "\n\n".join(pages)
 
 

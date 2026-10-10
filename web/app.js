@@ -115,8 +115,8 @@ function renderSources(items = []) {
         .map(
           (item, index) => `
             <div class="source-item">
-              <strong>${index + 1}. ${escapeHtml(item.source)}</strong>
-              <span>匹配度：${escapeHtml(item.score)}</span>
+              <strong>${escapeHtml(item.citation_id || `[${index + 1}]`)} ${escapeHtml(item.source)}</strong>
+              <span>检索排序分数：${escapeHtml(item.score)}</span>
               <p>${escapeHtml(item.text.slice(0, 220))}${item.text.length > 220 ? "..." : ""}</p>
             </div>
           `,

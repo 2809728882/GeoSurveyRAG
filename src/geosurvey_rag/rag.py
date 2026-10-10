@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 
 from geosurvey_rag.llm import create_llm
+from geosurvey_rag.retrieval import HybridRetriever
 from geosurvey_rag.schemas import SourceChunk
 from geosurvey_rag.settings import settings
 from geosurvey_rag.vector_store import create_vector_store
@@ -11,11 +12,33 @@ from geosurvey_rag.vector_store import create_vector_store
 
 class RagPipeline:
     def __init__(self, index_dir: Path | str = settings.index_dir) -> None:
-        self.store = create_vector_store(index_dir, settings.vector_backend, settings.dense_dim).load()
+        self.store = create_vector_store(
+            index_dir, settings.vector_backend, settings.dense_dim
+        ).load()
         self.llm = create_llm()
+        self.retriever = HybridRetriever(
+            self.store, settings.retrieval_mode, settings.min_similarity
+        )
 
-    def retrieve(self, question: str, top_k: int | None = None) -> list[tuple[object, float]]:
-        return self.store.search(question, top_k or settings.top_k)
+    def retrieve(
+        self, question: str, top_k: int | None = None, source_filter: str | None = None
+    ) -> list[tuple[object, float]]:
+        return self.retriever.search(
+            question, top_k if top_k is not None else settings.top_k, source_filter
+        )
+
+    @staticmethod
+    def source_chunks(retrieved) -> list[SourceChunk]:
+        return [
+            SourceChunk(
+                source=chunk.source,
+                chunk_id=chunk.chunk_id,
+                citation_id=f"[{index}]",
+                score=round(score, 4),
+                text=clean_display_text(chunk.text),
+            )
+            for index, (chunk, score) in enumerate(retrieved, 1)
+        ]
 
     def format_local_answer(self, question: str, retrieved: list[tuple[object, float]]) -> str:
         if not retrieved:
@@ -31,7 +54,7 @@ class RagPipeline:
                 text = text[:320].rstrip() + "..."
             lines.extend(
                 [
-                    f"{index}. 匹配度 {score:.4f}",
+                    f"[{index}] 检索排序分数 {score:.4f}",
                     f"来源：{chunk.source}",
                     f"内容：{text}",
                     "",
@@ -40,32 +63,29 @@ class RagPipeline:
         lines.append("说明：当前模式只做本地知识库检索，不调用大模型生成。")
         return "\n".join(lines).strip()
 
-    def answer_local(self, question: str, top_k: int | None = None) -> tuple[str, list[SourceChunk]]:
-        retrieved = self.retrieve(question, top_k)
-        sources = [
-            SourceChunk(
-                source=chunk.source,
-                chunk_id=chunk.chunk_id,
-                score=round(score, 4),
-                text=clean_display_text(chunk.text),
-            )
-            for chunk, score in retrieved
-        ]
+    def answer_local(
+        self, question: str, top_k: int | None = None, source_filter: str | None = None
+    ) -> tuple[str, list[SourceChunk]]:
+        retrieved = self.retrieve(question, top_k, source_filter)
+        sources = self.source_chunks(retrieved)
         return self.format_local_answer(question, retrieved), sources
 
-    def answer(self, question: str, top_k: int | None = None, tool_summary: str = "") -> tuple[str, list[SourceChunk]]:
-        retrieved = self.retrieve(question, top_k)
-        context = "\n\n".join(clean_display_text(chunk.text) for chunk, _score in retrieved)
+    def answer(
+        self,
+        question: str,
+        top_k: int | None = None,
+        tool_summary: str = "",
+        source_filter: str | None = None,
+    ) -> tuple[str, list[SourceChunk]]:
+        retrieved = self.retrieve(question, top_k, source_filter)
+        if not retrieved and not tool_summary:
+            return self.format_local_answer(question, []), []
+        context = "\n\n".join(
+            f"[{i}] 来源：{chunk.source}\n{clean_display_text(chunk.text)}"
+            for i, (chunk, _score) in enumerate(retrieved, 1)
+        )
         answer = self.llm.generate(question=question, context=context, tool_summary=tool_summary)
-        sources = [
-            SourceChunk(
-                source=chunk.source,
-                chunk_id=chunk.chunk_id,
-                score=round(score, 4),
-                text=clean_display_text(chunk.text),
-            )
-            for chunk, score in retrieved
-        ]
+        sources = self.source_chunks(retrieved)
         return answer, sources
 
 

@@ -1,14 +1,30 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from typing import Annotated, Literal
+from pydantic import BaseModel, Field, FiniteFloat, field_validator
+
+LonLat = tuple[
+    Annotated[float, Field(ge=-180, le=180, allow_inf_nan=False)],
+    Annotated[float, Field(ge=-90, le=90, allow_inf_nan=False)],
+]
 
 
 class ChatRequest(BaseModel):
-    question: str = Field(..., min_length=2, examples=["无人机航测成果入库前需要检查哪些质量项？"])
+    question: str = Field(
+        ..., min_length=2, max_length=8000, examples=["无人机航测成果入库前需要检查哪些质量项？"]
+    )
     top_k: int | None = Field(default=None, ge=1, le=10)
     use_tools: bool = True
-    mode: str = "knowledge_ai"
+    mode: Literal["local", "knowledge_ai", "knowledge_ai_search"] = "knowledge_ai"
+    source_filter: str | None = Field(default=None, min_length=1, max_length=200)
     urls: list[str] | None = None
+
+    @field_validator("question")
+    @classmethod
+    def strip_question(cls, value):
+        if len(value.strip()) < 2:
+            raise ValueError("Please enter a question of at least two characters.")
+        return value.strip()
 
 
 class SourceChunk(BaseModel):
@@ -16,6 +32,7 @@ class SourceChunk(BaseModel):
     chunk_id: str
     score: float
     text: str
+    citation_id: str = ""
 
 
 class ToolCall(BaseModel):
@@ -30,27 +47,30 @@ class ChatResponse(BaseModel):
     tool_calls: list[ToolCall] = []
     mode: str = "knowledge_ai"
     crawl: dict | None = None
+    retrieval_status: Literal["matched", "no_evidence"] = "matched"
+    retrieval_method: str = "hybrid"
 
 
 class DistanceRequest(BaseModel):
-    points: list[tuple[float, float]] = Field(..., min_length=2)
-    unit: str = "m"
+    points: list[LonLat] = Field(..., min_length=2, max_length=10000)
+    unit: Literal["m", "km"] = "m"
+    method: Literal["geodesic", "haversine"] = "geodesic"
 
 
 class AreaRequest(BaseModel):
-    polygon: list[tuple[float, float]] = Field(..., min_length=3)
-    unit: str = "m2"
+    polygon: list[LonLat] = Field(..., min_length=3, max_length=10000)
+    unit: Literal["m2", "km2", "ha"] = "m2"
 
 
 class TransformRequest(BaseModel):
-    x: float
-    y: float
-    from_epsg: int = 4326
-    to_epsg: int = 3857
+    x: FiniteFloat
+    y: FiniteFloat
+    from_epsg: int = Field(default=4326, gt=0)
+    to_epsg: int = Field(default=3857, gt=0)
 
 
 class WktRequest(BaseModel):
-    wkt: str
+    wkt: str = Field(min_length=5, max_length=100000)
 
 
 class ManualKnowledgeRequest(BaseModel):

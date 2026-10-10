@@ -9,3 +9,5 @@ data/knowledge/uploads/
 data/uploads/
 data/sources/crawler_state.json
 *.pyc
+*.egg-info/
+data/index-faiss/

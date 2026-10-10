@@ -14,7 +14,7 @@ python -m geosurvey_rag.ingestion --source data\knowledge --index data\index --b
 特点：
 
 - 不依赖第三方向量库。
-- 使用中文 n-gram + 稀疏余弦相似度。
+- 使用中文 n-gram + 稀疏余弦相似度，默认再与 BM25 通过 RRF 融合。
 - 适合小知识库和快速原型。
 
 ## FAISS 本地向量索引
@@ -22,7 +22,7 @@ python -m geosurvey_rag.ingestion --source data\knowledge --index data\index --b
 适合展示向量数据库和 RAG 工程化能力。
 
 ```powershell
-pip install -r requirements-llm.txt
+python -m pip install -e ".[faiss]"
 $env:VECTOR_BACKEND="faiss"
 python -m geosurvey_rag.ingestion --source data\knowledge --index data\index --backend faiss
 ```
@@ -38,6 +38,8 @@ python -m geosurvey_rag.ingestion --source data\knowledge --index data\index --b
 - `bge-m3`
 - `text-embedding-3-small`
 - `Qwen3-Embedding`
+
+两种后端均支持混合检索与来源筛选。FAISS 通过 Python 字节序列化读写，支持 Windows 中文路径；更改维度后需重建。当前混合检索会在内存中扫描候选词频，适用于演示与小型资料库；大规模服务需要独立倒排索引和候选截断。
 
 ## Milvus 接入路线
 

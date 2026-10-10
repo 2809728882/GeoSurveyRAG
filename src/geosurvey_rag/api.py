@@ -5,8 +5,8 @@ from datetime import datetime
 from pathlib import Path
 from zipfile import BadZipFile
 
-from fastapi import FastAPI, File, Form, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, File, Form, UploadFile, Request
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from geosurvey_rag.agent import GeoAgent, format_tool_summary
@@ -37,16 +37,22 @@ from geosurvey_rag.schemas import (
 from geosurvey_rag.settings import settings
 from geosurvey_rag.tools.geodesy import (
     haversine_distance,
+    geodesic_distance,
     polygon_area_lambert,
     transform_coordinate,
     wkt_bbox,
 )
 
-app = FastAPI(title=settings.app_name, version="0.1.0")
+app = FastAPI(title=settings.app_name, version="0.2.0")
 rag = RagPipeline(settings.index_dir)
 agent = GeoAgent()
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 WEB_DIR = PROJECT_ROOT / "web"
+
+
+@app.exception_handler(ValueError)
+async def invalid_input(_request: Request, exc: ValueError):
+    return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
 def polish_answer(answer: str) -> str:
@@ -91,7 +97,9 @@ def read_front_matter(path: Path) -> dict:
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok", "app": settings.app_name}
+    return {"status": "ok", "app": settings.app_name, "version": "0.2.0",
+            "index_ready": bool(rag.store.chunks), "chunk_count": len(rag.store.chunks),
+            "retrieval_method": settings.retrieval_mode}
 
 
 @app.get("/")
@@ -151,7 +159,7 @@ def rebuild_index(force: bool = False, crawl_first: bool = False) -> dict:
 @app.post("/admin/knowledge/manual")
 def manual_knowledge(request: ManualKnowledgeRequest) -> dict:
     global rag
-    path = save_manual_knowledge(request.title, request.content, request.category)
+    path = save_manual_knowledge(request.title, request.content, request.category, knowledge_dir=settings.knowledge_dir)
     result = None
     if request.rebuild:
         result = reindex_if_needed(settings.knowledge_dir, settings.index_dir, force=True)
@@ -181,7 +189,7 @@ async def upload_knowledge(
     for file in files:
         data = await file.read()
         try:
-            results.append(save_uploaded_knowledge(file.filename or "upload", data, category))
+            results.append(save_uploaded_knowledge(file.filename or "upload", data, category, knowledge_dir=settings.knowledge_dir))
         except (ValueError, RuntimeError, BadZipFile) as exc:  # type: ignore[name-defined]
             results.append({"filename": file.filename, "ok": False, "error": str(exc)})
 
@@ -247,8 +255,10 @@ def chat(request: ChatRequest) -> ChatResponse:
     mode = request.mode or "knowledge_ai"
     crawl_result = None
     if mode == "local":
-        answer, sources = rag.answer_local(request.question, top_k=request.top_k)
-        return ChatResponse(answer=polish_answer(answer), sources=sources, tool_calls=[], mode=mode)
+        answer, sources = rag.answer_local(request.question, top_k=request.top_k, source_filter=request.source_filter)
+        return ChatResponse(answer=polish_answer(answer), sources=sources, tool_calls=[], mode=mode,
+                            retrieval_status="matched" if sources else "no_evidence",
+                            retrieval_method=settings.retrieval_mode)
 
     if mode == "knowledge_ai_search":
         crawl_result = crawl_sources(request.urls)
@@ -260,6 +270,7 @@ def chat(request: ChatRequest) -> ChatResponse:
         request.question,
         top_k=request.top_k,
         tool_summary=format_tool_summary(tool_calls),
+        source_filter=request.source_filter,
     )
     return ChatResponse(
         answer=polish_answer(answer),
@@ -267,12 +278,15 @@ def chat(request: ChatRequest) -> ChatResponse:
         tool_calls=tool_calls,
         mode=mode,
         crawl=crawl_result,
+        retrieval_status="matched" if sources else "no_evidence",
+        retrieval_method=settings.retrieval_mode,
     )
 
 
 @app.post("/tool/distance")
 def distance(request: DistanceRequest) -> dict:
-    return haversine_distance(request.points, request.unit)
+    function = geodesic_distance if request.method == "geodesic" else haversine_distance
+    return function(request.points, request.unit)
 
 
 @app.post("/tool/area")

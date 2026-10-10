@@ -10,7 +10,7 @@ def test_haversine_distance_returns_meters() -> None:
 def test_polygon_area_lambert_returns_positive_area() -> None:
     result = polygon_area_lambert([(111.30, 30.70), (111.31, 30.70), (111.31, 30.71)])
     assert result["area"] > 0
-    assert result["method"] == "local_lambert"
+    assert result["method"] == "wgs84_geodesic"
 
 
 def test_wkt_bbox() -> None:

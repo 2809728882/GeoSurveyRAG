@@ -20,6 +20,8 @@ class Settings:
     chunk_overlap: int = int(os.getenv("CHUNK_OVERLAP", "100"))
     vector_backend: str = os.getenv("VECTOR_BACKEND", "json")
     dense_dim: int = int(os.getenv("DENSE_DIM", "384"))
+    retrieval_mode: str = os.getenv("RETRIEVAL_MODE", "hybrid")
+    min_similarity: float = float(os.getenv("MIN_SIMILARITY", "0.04"))
     llm_provider: str = os.getenv("LLM_PROVIDER", "local")
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     openai_base_url: str = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")

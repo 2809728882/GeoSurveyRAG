@@ -14,6 +14,8 @@ SUPPORTED_EXTENSIONS = {".md", ".txt"}
 
 
 def split_text(text: str, chunk_size: int, overlap: int) -> list[str]:
+    if chunk_size < 1 or overlap < 0 or overlap >= chunk_size:
+        raise ValueError("Require chunk_size > 0 and 0 <= overlap < chunk_size.")
     normalized = "\n".join(line.strip() for line in text.splitlines() if line.strip())
     if len(normalized) <= chunk_size:
         return [normalized]
@@ -52,6 +54,9 @@ def build_manifest(source_dir: Path, documents: list[Path], chunk_count: int, ba
         "vector_backend": backend,
         "document_count": len(documents),
         "chunk_count": chunk_count,
+        "chunk_size": settings.chunk_size,
+        "chunk_overlap": settings.chunk_overlap,
+        "dense_dim": settings.dense_dim,
         "documents": [
             {
                 "path": str(path),
@@ -79,7 +84,8 @@ def knowledge_changed(source_dir: Path, index_dir: Path) -> bool:
         return True
     previous_docs = {item["path"]: item["sha1"] for item in previous.get("documents", [])}
     current_docs = {item["path"]: item["sha1"] for item in current["documents"]}
-    return previous_docs != current_docs or previous.get("vector_backend") != settings.vector_backend
+    config_keys = ("vector_backend", "chunk_size", "chunk_overlap", "dense_dim")
+    return previous_docs != current_docs or any(previous.get(key) != current[key] for key in config_keys)
 
 
 def build_index(source_dir: Path, index_dir: Path, backend: str | None = None) -> int:
@@ -90,7 +96,7 @@ def build_index(source_dir: Path, index_dir: Path, backend: str | None = None) -
     for path in documents:
         text = path.read_text(encoding="utf-8")
         for index, chunk in enumerate(split_text(text, settings.chunk_size, settings.chunk_overlap)):
-            store.add(str(path), chunk, index)
+            store.add(path.relative_to(source_dir).as_posix(), chunk, index)
             count += 1
     store.save()
     manifest = build_manifest(source_dir, documents, count, selected_backend)

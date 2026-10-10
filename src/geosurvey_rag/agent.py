@@ -4,10 +4,35 @@ import re
 from dataclasses import dataclass
 
 from geosurvey_rag.schemas import ToolCall
-from geosurvey_rag.tools.geodesy import haversine_distance, polygon_area_lambert, wkt_bbox
+from geosurvey_rag.tools.geodesy import (
+    geodesic_distance,
+    polygon_area_lambert,
+    transform_coordinate,
+    wkt_bbox,
+)
 
 
-COORD_RE = re.compile(r"\((-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)\)")
+NUMBER = r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?"
+COORD_RE = re.compile(rf"\(\s*({NUMBER})\s*,\s*({NUMBER})\s*\)")
+
+
+def extract_wkt(question: str) -> str | None:
+    match = re.search(
+        r"\b(?:SRID=\d+;\s*)?(?:MULTIPOLYGON|MULTILINESTRING|MULTIPOINT|POLYGON|LINESTRING|POINT|GEOMETRYCOLLECTION)\s*(?:Z|M|ZM)?\s*\(",
+        question,
+        re.I,
+    )
+    if not match:
+        return None
+    depth = 1
+    for index in range(match.end(), len(question)):
+        if question[index] == "(":
+            depth += 1
+        elif question[index] == ")":
+            depth -= 1
+        if depth == 0:
+            return question[match.start() : index + 1]
+    return question[match.start() :]
 
 
 @dataclass
@@ -16,22 +41,52 @@ class GeoAgent:
 
     def maybe_run_tools(self, question: str) -> list[ToolCall]:
         calls: list[ToolCall] = []
-        coords = [(float(x), float(y)) for x, y in COORD_RE.findall(question)]
+        normalized = question.replace("（", "(").replace("）", ")").replace("，", ",")
+        coords = [(float(x), float(y)) for x, y in COORD_RE.findall(normalized)]
+
+        def call(name, arguments, function, *args, **kwargs):
+            try:
+                result = function(*args, **kwargs)
+            except ValueError as exc:
+                result = {"error": str(exc)}
+            calls.append(ToolCall(name=name, arguments=arguments, result=result))
 
         if len(coords) >= 2 and any(keyword in question for keyword in ["距离", "里程", "路线"]):
-            result = haversine_distance(coords, unit="m")
-            calls.append(ToolCall(name="haversine_distance", arguments={"points": coords}, result=result))
+            unit = "km" if "公里" in question else "m"
+            call(
+                "geodesic_distance",
+                {"points": coords, "unit": unit},
+                geodesic_distance,
+                coords,
+                unit,
+            )
 
         if len(coords) >= 3 and any(keyword in question for keyword in ["面积", "地块", "宗地"]):
-            result = polygon_area_lambert(coords, unit="m2")
-            calls.append(ToolCall(name="polygon_area_lambert", arguments={"polygon": coords}, result=result))
+            unit = "ha" if "公顷" in question else "m2"
+            call(
+                "polygon_area",
+                {"polygon": coords, "unit": unit},
+                polygon_area_lambert,
+                coords,
+                unit,
+            )
 
-        if "POLYGON" in question.upper() or "LINESTRING" in question.upper() or "POINT" in question.upper():
-            try:
-                result = wkt_bbox(question)
-            except ValueError:
-                result = {"error": "未能从问题中解析出有效 WKT 坐标。"}
-            calls.append(ToolCall(name="wkt_bbox", arguments={"wkt": question}, result=result))
+        crs_codes = re.findall(r"EPSG\s*[:：]?\s*(\d+)", question, re.I)
+        if (
+            len(coords) == 1
+            and len(crs_codes) == 2
+            and any(word in question for word in ["转换", "转为", "转成", "转到"])
+        ):
+            args = dict(
+                x=coords[0][0],
+                y=coords[0][1],
+                from_epsg=int(crs_codes[0]),
+                to_epsg=int(crs_codes[1]),
+            )
+            call("transform_coordinate", args, transform_coordinate, **args)
+        geometry = extract_wkt(question)
+        if geometry:
+            call("wkt_bbox", {"wkt": geometry}, wkt_bbox, geometry)
 
         return calls
 
