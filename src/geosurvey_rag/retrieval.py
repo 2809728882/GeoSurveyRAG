@@ -27,7 +27,7 @@ class HybridRetriever:
         query_vector = embed_text(query)
         identifiers = {
             re.sub(r"\s+", "", match).replace("：", ":").lower()
-            for match in re.findall(r"\bEPSG\s*[:：]\s*\d+\b", query, re.IGNORECASE)
+            for match in re.findall(r"(?<![A-Za-z0-9_])EPSG\s*[:：]\s*\d+(?!\d)", query, re.IGNORECASE)
         }
         eligible: dict[str, DocumentChunk] = {}
         for chunk in self.store.chunks:

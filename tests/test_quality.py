@@ -71,8 +71,13 @@ def test_exact_epsg_identifier_survives_long_document_threshold(tmp_path):
     store.add(
         "coordinate.md", "测绘资料需要整理归档。" * 100 + "WebGIS 使用 EPSG:3857 Web Mercator。", 0
     )
-    result = HybridRetriever(store).search("WebGIS 为什么常用 EPSG:3857？")
-    assert result and result[0][0].source == "coordinate.md"
+    for question in [
+        "WebGIS 为什么常用 EPSG:3857？",
+        "WebGIS为什么常用EPSG:3857？",
+        "坐标系EPSG：3857是什么？",
+    ]:
+        result = HybridRetriever(store).search(question)
+        assert result and result[0][0].source == "coordinate.md"
 
 
 def test_context_citations_and_relative_paths(tmp_path):
